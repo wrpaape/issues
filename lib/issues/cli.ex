@@ -14,18 +14,20 @@ defmodule Issues.CLI do
 
 
   def process(:help) do
-    IO.puts """
+    """
     usage: issues <user> <project> [ count | #{@default_count} ]
     """
+    |> IO.puts
 
     System.halt(0)
   end
 
-  def process({user, project, _count}) do
+  def process({user, project, count}) do
     Issues.GithubIssues.fetch(user, project)
     |> decode_response
     |> convert_to_list_of_maps
     |> sort_into_ascending_order
+    |> Enum.take(count)
   end
 
   def decode_response({:ok, body}),    do: body
