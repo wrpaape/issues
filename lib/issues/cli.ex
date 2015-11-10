@@ -23,14 +23,26 @@ defmodule Issues.CLI do
 
   def process({user, project, _count}) do
     Issues.GithubIssues.fetch(user, project)
-    |> _decode_response
+    |> decode_response
+    |> convert_to_list_of_maps
+    |> sort_into_ascending_order
   end
 
-  defp _decode_response({:ok, body}),     do: body
-  defp _decode_response({:error, error}), do
+  def decode_response({:ok, body}),    do: body
+  def decode_response({:error, error}) do
     {_, message} = List.keyfind(error, "message", 0)
     IO.puts "Error fetching from Github: #{message}"
     System.halt(2)
+  end
+
+  def convert_to_list_of_maps(list) do
+    list
+    |> Enum.map(&Enum.into(&1, %{}))
+  end
+
+  def sort_into_ascending_order(list_of_issues) do
+    list_of_issues
+    |> Enum.sort_by(&(&1["created_at"]))
   end
 
   @doc """
