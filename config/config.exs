@@ -3,7 +3,7 @@
 use Mix.Config
 config :issues,
   github_url: "https://api.github.com",
-  sort_by: :created_at,
+  sort_by: :title,
   header_keys: [:id, :created_at, :title]
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this

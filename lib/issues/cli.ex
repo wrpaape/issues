@@ -1,19 +1,20 @@
 defmodule Issues.CLI do
   @default_count 4
   @sort_by Application.get_env(:issues, :sort_by)
-  @header_keys Application.get_env(:issues, :header_keys)
+
+  alias Issues.GithubIssues
+  alias Issues.Printer
 
   @moduledoc """
   Handle the command line parsing and the dispatch to the various functions
   that end up generating a table of the last _n_ issues in a github project
   """
   
-  def run(argv) do
+  def main(argv) do
     argv
     |> parse_args
     |> process
   end
-
 
   def process(:help) do
     """
@@ -25,11 +26,11 @@ defmodule Issues.CLI do
   end
 
   def process({user, project, count}) do
-    Issues.GithubIssues.fetch(user, project)
+    GithubIssues.fetch(user, project)
     |> decode_response
     |> sort_into_ascending_order
     |> Enum.take(count)
-    |> format_and_print
+    |> Printer.process
   end
 
   def decode_response({:ok, body}),    do: body
@@ -65,76 +66,5 @@ defmodule Issues.CLI do
       
       _ -> :help
     end
-  end
-
-  def string_params(string) do
-    [length: String.length(string), string: string]
-  end
-
-  def print_params(key, issues) do
-    key_params =
-      key
-      |> Atom.to_string
-      |> string_params
-    vals_params =
-      issues
-      |> Enum.map(&string_params("#{&1[key]}"))
-    max_width = 
-      vals_params
-      |> Enum.max
-      |> Keyword.fetch!(:length)
-      |> max(key_params[:length])
-      |> + 2
-
-    [vals_params: vals_params, max_width: max_width] ++ key_params
-  end
-
-  def calc_format_params(issues) do
-    @header_keys
-    |> Enum.map(&print_params(&1, issues))
-  end
-
-  def div_rem_2(int), do: [div(int, 2), rem(int, 2)]
-  def pad_lengths([lpad, offset]), do: [lpad, lpad + offset]
-  def calc_pads(max_width, length) do
-    max_width
-    |> - length
-    |> div_rem_2
-    |> pad_lengths
-    |> Enum.map(&String.duplicate(" ", &1))
-  end
-
-  def center([max_width: max_width, length: length, string: string]) do 
-    [lpad, rpad] = calc_pads(max_width, length)
-
-    lpad <> string <> rpad
-  end
-
-  def format([{:vals_params, vals_params} | key_params]) do
-    width_param = 
-      key_params
-      |> List.first
-    col_head = 
-      key_params
-      |> center
-
-    vals_params
-      |> Enum.map(&center([width_param | &1]))
-      |> List.insert_at(0, col_head)
-  end
-
-  def print_row(cols) do
-    cols
-    |> Tuple.to_list
-    |> Enum.join("|")
-    |> IO.puts
-  end
-
-  def format_and_print(issues) do
-    issues
-    |> calc_format_params
-    |> Enum.map(&format/1)
-    |> List.zip
-    |> Enum.each(&print_row/1)
   end
 end
