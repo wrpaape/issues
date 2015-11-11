@@ -29,7 +29,7 @@ defmodule Issues.CLI do
     |> decode_response
     |> sort_into_ascending_order
     |> Enum.take(count)
-    |> format_issues
+    |> format_and_print
   end
 
   def decode_response({:ok, body}),    do: body
@@ -67,60 +67,78 @@ defmodule Issues.CLI do
     end
   end
 
-  def key_params(key, issues) do
-    key_str =
+  def string_params(string) do
+    [length: String.length(string), string: string]
+  end
+
+  def print_params(key, issues) do
+    key_params =
       key
       |> Atom.to_string
-    key_len = 
-      key_str
-      |> String.length
-    val_len =
+      |> string_params
+    vals_params =
       issues
-      |> Enum.map(&String.length("#{&1[key]}"))
-      |> Enum.max
+      |> Enum.map(&string_params("#{&1[key]}"))
     max_width = 
-      key_len
-      |> max(val_len)
+      vals_params
+      |> Enum.max
+      |> Keyword.fetch!(:length)
+      |> max(key_params[:length])
       |> + 2
 
-    %{key: key, string: key_str, length: key_len, max_width: max_width}
+    [vals_params: vals_params, max_width: max_width] ++ key_params
   end
 
   def calc_print_params(issues) do
     @header_keys
-    |> Enum.map(&key_params(&1, issues))
+    |> Enum.map(&print_params(&1, issues))
   end
 
-  def map_funcs(funcs, args), do: funcs |> Enum.map(&apply(&1, args))
-  def div_rem_2(int) do
-    [&div/2, &rem/2]
-    |> map_funcs([int, 2])
-  end
+  # def map_funcs(funcs, args), do: funcs |> Enum.map(&apply(&1, args))
+  # def div_rem_2(int) do
+  #   [&div/2, &rem/2]
+  #   |> map_funcs([int, 2])
+  # end
+  # (&[div(&1, 2), rem(&1, 2)]).()
 
+  def div_rem_2(int), do: [div(int, 2), rem(int, 2)]
   def pad_lengths([lpad, offset]), do: [lpad, lpad + offset]
-  def calc_pads(max_width, string) do
-    max_width - String.length(string)
+  def calc_pads(max_width, length) do
+    max_width
+    |> - length
     |> div_rem_2
     |> pad_lengths
     |> Enum.map(&String.duplicate(" ", &1))
   end
 
-  def center(%{string: string, max_width: max_width}) do 
-    [lpad, rpad] = calc_pads(max_width, string)
+  def center([max_width: max_width, length: length, string: string]) do 
+    [lpad, rpad] = calc_pads(max_width, length)
 
-    lpad <> str <> rpad
+    lpad <> string <> rpad
   end
 
-  def print(print_params) do
-    # IO.inspect print_params
-    print_params
-    |> Enum.map_join("|", &center/1)
+  def join_row(params), do: Enum.map_join(params, "|", &center/1)
+
+  def print([{:vals_params, vals_params} | key_params]) do
+    key_params
+    |> print
+
+    width_param = 
+      key_params
+      |> List.first
+
+    vals_params
+    |> Enum.each(&print([width_param | &1]))
   end
 
-  def format_issues(issues) do
-    print_params =
+  def print(params) do
+    |> join_row
+    |> IO.puts
+  end
+
+  def format_and_print(issues) do
     issues
     |> calc_print_params
-    |> print
+    |> Enum.each(&print/1)
   end
 end
