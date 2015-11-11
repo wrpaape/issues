@@ -89,17 +89,10 @@ defmodule Issues.CLI do
     [vals_params: vals_params, max_width: max_width] ++ key_params
   end
 
-  def calc_print_params(issues) do
+  def calc_format_params(issues) do
     @header_keys
     |> Enum.map(&print_params(&1, issues))
   end
-
-  # def map_funcs(funcs, args), do: funcs |> Enum.map(&apply(&1, args))
-  # def div_rem_2(int) do
-  #   [&div/2, &rem/2]
-  #   |> map_funcs([int, 2])
-  # end
-  # (&[div(&1, 2), rem(&1, 2)]).()
 
   def div_rem_2(int), do: [div(int, 2), rem(int, 2)]
   def pad_lengths([lpad, offset]), do: [lpad, lpad + offset]
@@ -117,28 +110,31 @@ defmodule Issues.CLI do
     lpad <> string <> rpad
   end
 
-  def join_row(params), do: Enum.map_join(params, "|", &center/1)
-
-  def print([{:vals_params, vals_params} | key_params]) do
-    key_params
-    |> print
-
+  def format([{:vals_params, vals_params} | key_params]) do
     width_param = 
       key_params
       |> List.first
+    col_head = 
+      key_params
+      |> center
 
     vals_params
-    |> Enum.each(&print([width_param | &1]))
+      |> Enum.map(&center([width_param | &1]))
+      |> List.insert_at(0, col_head)
   end
 
-  def print(params) do
-    |> join_row
+  def print_row(cols) do
+    cols
+    |> Tuple.to_list
+    |> Enum.join("|")
     |> IO.puts
   end
 
   def format_and_print(issues) do
     issues
-    |> calc_print_params
-    |> Enum.each(&print/1)
+    |> calc_format_params
+    |> Enum.map(&format/1)
+    |> List.zip
+    |> Enum.each(&print_row/1)
   end
 end
