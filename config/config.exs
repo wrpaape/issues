@@ -5,6 +5,9 @@ config :issues,
   github_url: "https://api.github.com",
   sort_by: :title,
   header_keys: [:id, :created_at, :title]
+
+config :logger,
+  compile_time_purge_level: :info
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
 # file won't be loaded nor affect the parent project. For this reason,

@@ -1,9 +1,9 @@
 defmodule Issues.CLI do
-  @default_count 4
-  @sort_by Application.get_env(:issues, :sort_by)
-
   alias Issues.GithubIssues
   alias Issues.Printer
+
+  @default_count 4
+  @sort_by Application.get_env(:issues, :sort_by)
 
   @moduledoc """
   Handle the command line parsing and the dispatch to the various functions

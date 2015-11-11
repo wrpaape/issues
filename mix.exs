@@ -5,10 +5,14 @@ defmodule Issues.Mixfile do
     [app: :issues,
      version: "0.0.1",
      elixir: "~> 1.1",
+     name: "Issues",
+     source_url: "https://github.com/wrpaape/issues",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      escript: escript_config,
-     deps: deps]
+     deps: deps,
+     docs: [logo: "assets/ORIGINAL_LOGO_DO_NOT_STEAL.jpg",
+            extras: ["README.md"]]]
   end
 
   # Configuration for the OTP application
@@ -30,7 +34,9 @@ defmodule Issues.Mixfile do
   defp deps do
     [
       {:httpoison, "~> 0.8.0"},
-      {:jsx,       "~> 2.8.0"}
+      {:jsx,       "~> 2.8.0"},
+      {:earmark,   "~> 0.1",   only: :dev},
+      {:ex_doc,    "~> 0.10",  only: :dev}
     ]
   end
 
